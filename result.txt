@@ -1,0 +1,1 @@
+score_m_and_ma 는 2.682350score_m_and_fa 는 2.682350score_f_and_ma 는 2.664743score_f_and_fa 는 2.682041score_ma_and_m 는 7.137249score_ma_and_f 는 7.091215score_fa_and_m 는 7.096416score_fa_and_f 는 7.096416
