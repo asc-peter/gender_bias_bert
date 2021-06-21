@@ -30,6 +30,11 @@ m_to_ma = []
 m_to_fa = []
 f_to_ma = []
 f_to_fa = []
+ma_to_m = []
+ma_to_f = []
+fa_to_m = []
+fa_to_f = []
+
 
 
 for te in temps:
@@ -77,37 +82,85 @@ for te in temps:
     tem_1 = []
     tem_2 = []
     for m in male_noun:
+        te_1 = []
         for ma in male_attributes:
             ta = te
             ta = ta.replace('[MASK1]', m)
             ta = ta.replace('[MASK2]', ma)
-            tem_1.append(ta)
-       
+            te_1.append(ta)
+        tem_1.append(te_1)
+        te_2 = []
         for fa in female_attributes:
             ta = te
             ta = ta.replace('[MASK1]', m)
             ta = ta.replace('[MASK2]', fa)
-            tem_2.append(ta)
-    m_to_ma.append(tem_2)
+            te_2.append(ta)
+        tem_2.append(te_2)
+    m_to_ma.append(tem_1)
     m_to_fa.append(tem_2)
 
 for te in temps:
     tem_1 = []
     tem_2 = []
-    for f in male_noun:
+    for f in female_noun:
+        te_1 = []
         for ma in male_attributes:
             ta = te
             ta = ta.replace('[MASK1]', f)
             ta = ta.replace('[MASK2]', ma)
-            tem_1.append(ta)
-       
+            te_1.append(ta)
+        tem_1.append(te_1)
+        te_2 = []
         for fa in female_attributes:
             ta = te
             ta = ta.replace('[MASK1]', f)
             ta = ta.replace('[MASK2]', fa)
-            tem_2.append(ta)
+            te_2.append(ta)
+        tem_2.append(te_2)
     f_to_ma.append(tem_1)
     f_to_fa.append(tem_2)
+
+for te in temps:
+    tem_1 = []
+    tem_2 = []
+    for ma in male_attributes:
+        te_1 = []
+        for m in male_noun:
+            ta = te
+            ta = ta.replace('[MASK1]', m)
+            ta = ta.replace('[MASK2]', ma)
+            te_1.append(ta)
+        tem_1.append(te_1)
+        te_2 = []
+        for f in female_noun:
+            ta = te
+            ta = ta.replace('[MASK1]', m)
+            ta = ta.replace('[MASK2]', fa)
+            te_2.append(ta)
+        tem_2.append(te_2)
+    ma_to_m.append(tem_1)
+    ma_to_f.append(tem_2)
+
+for te in temps:
+    tem_1 = []
+    tem_2 = []
+    for fa in female_attributes:
+        te_1 = []
+        for m in male_noun:
+            ta = te
+            ta = ta.replace('[MASK1]', m)
+            ta = ta.replace('[MASK2]', ma)
+            te_1.append(ta)
+        tem_1.append(te_1)
+        te_2 = []
+        for f in female_noun:
+            ta = te
+            ta = ta.replace('[MASK1]', m)
+            ta = ta.replace('[MASK2]', fa)
+            te_2.append(ta)
+        tem_2.append(te_2)
+    fa_to_m.append(tem_1)
+    fa_to_f.append(tem_2)
 
 
 tokenizer_bert = BertTokenizerFast.from_pretrained("kykim/bert-kor-base")
@@ -140,38 +193,71 @@ for fa in female_attributes:
     l = len(a[0])
     fa_token_num.append(l - 2)
 
-def estimater(src, tgt):
+def estimater_1(src, tgt):
     total_loss = 0
     for s, t in zip(src, tgt):
-        for i in t:
-            inputs = tokenizer_bert(s, return_tensors="pt") 
-            labels = tokenizer_bert(i, return_tensors="pt")['input_ids']
-            inputs = inputs.to(device)
-            labels = labels.to(device)
-            outputs = model(**inputs, labels=labels)
-            loss = outputs.loss
-            total_loss += loss 
-    return total_loss 
+        for tt in t:
+            for i in tt:
+                inputs = tokenizer_bert(s, return_tensors="pt") 
+                labels = tokenizer_bert(i, return_tensors="pt")['input_ids']
+                inputs = inputs.to(device)
+                labels = labels.to(device)
+                outputs = model(**inputs, labels=labels)
+                loss = outputs.loss
+                total_loss += loss 
+    return total_loss
 
-score_m_and_ma = estimater(only_temps, m_to_ma) / estimater(only_temps, only_ms)
-score_m_and_fa = estimater(only_temps, m_to_fa) / estimater(only_temps, only_ms)
-score_f_and_ma = estimater(only_temps, f_to_ma) / estimater(only_temps, only_fs)
-score_f_and_fa = estimater(only_temps, f_to_fa) / estimater(only_temps, only_fs)
-score_ma_and_m = estimater(only_temps, m_to_ma) / estimater(only_temps, only_mas)
-score_ma_and_f = estimater(only_temps, f_to_ma) / estimater(only_temps, only_mas)
-score_fa_and_m = estimater(only_temps, m_to_fa) / estimater(only_temps, only_fas)
-score_fa_and_f = estimater(only_temps, f_to_fa) / estimater(only_temps, only_fas)
+def estimater_2(src, tgt):
+    total_loss = 0 
+    for s, t in zip(src, tgt):
+        for ss, tt in zip(s, t):
+            for i in tt:
+                inputs = tokenizer_bert(ss, return_tensors="pt")
+                labels = tokenizer_bert(i, return_tensors="pt")['input_ids']
+                inputs = inputs.to(device)
+                labels = labels.to(device)
+                outputs = model(**inputs, labels=labels)
+                loss = outputs.loss
+                total_loss += loss
+    return total_loss
+
+score_m_and_ma = estimater_2(only_ms, m_to_ma) / estimater_1(only_temps, m_to_ma)
+score_m_and_fa = estimater_2(only_ms, m_to_fa) / estimater_1(only_temps, m_to_fa)
+score_f_and_ma = estimater_2(only_fs, f_to_ma) / estimater_1(only_temps, f_to_ma)
+score_f_and_fa = estimater_2(only_fs, f_to_fa) / estimater_1(only_temps, f_to_fa)
+score_ma_and_m = estimater_2(only_mas, ma_to_m) / estimater_1(only_temps, ma_to_m)
+score_ma_and_f = estimater_2(only_mas, ma_to_f) / estimater_1(only_temps, ma_to_f)
+score_fa_and_m = estimater_2(only_fas, fa_to_m) / estimater_1(only_temps, fa_to_m)
+score_fa_and_f = estimater_2(only_fas, fa_to_f) / estimater_1(only_temps, fa_to_f)
+
+
+bias_1 = 0.5*((1/score_m_and_ma) / (1/score_m_and_fa)) + 0.5*((1/score_f_and_fa) / (1/score_f_and_ma))
+bias_2 = 0.5*((1/score_ma_and_m) / (1/score_ma_and_f)) + 0.5*((1/score_fa_and_f) / (1/score_fa_and_m))
+
 
 
 f = open('./result.txt', 'w')
-f.write('score_m_and_ma 는 %f' %score_m_and_ma)
-f.write('score_m_and_fa 는 %f' %score_m_and_fa)
-f.write('score_f_and_ma 는 %f' %score_f_and_ma)
-f.write('score_f_and_fa 는 %f' %score_f_and_fa)
-f.write('score_ma_and_m 는 %f' %score_ma_and_m)
-f.write('score_ma_and_f 는 %f' %score_ma_and_f)
-f.write('score_fa_and_m 는 %f' %score_fa_and_m)
-f.write('score_fa_and_f 는 %f' %score_fa_and_f)
+f.write('남성명사가 주어진 경우 남성직업에 대해서: %f' %score_m_and_ma)
+f.write('\n')
+f.write('남성명사가 주어진 경우 여성직업에 대해서: %f' %score_m_and_fa)
+f.write('\n')
+f.write('여성명사가 주어진 경우 남성직업에 대해서: %f' %score_f_and_ma)
+f.write('\n')
+f.write('여성명사가 주어진 경우 여성직업에 대해서: %f' %score_f_and_fa)
+f.write('\n')
+f.write('남성직업이 주어진 경우 남성명사에 대해서: %f' %score_ma_and_m)
+f.write('\n')
+f.write('남성직업이 주어진 경우 여성명사에 대해서: %f' %score_ma_and_f)
+f.write('\n')
+f.write('여성직업이 주어진 경우 남성명사에 대해서: %f' %score_fa_and_m)
+f.write('\n')
+f.write('여성직업이 주어진 경우 여성명사에 대해서: %f' %score_fa_and_f)
+f.write('\n')
+f.write('명사 -> 특성 편향: %f' %bias_1)
+f.write('\n')
+f.write('특성 -> 명사 편향: %f' %bias_2)
+
+
 f.close()    
 
 
